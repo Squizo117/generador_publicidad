@@ -37,14 +37,17 @@ sql/001_initial_schema.sql
 
 La clave de Gemini se usa exclusivamente en el servidor. Para Supabase, descarga el certificado raíz en **Database Settings → SSL Configuration**, guárdalo como `certs/supabase-root.crt` y configura `DATABASE_SSL=true` y `DATABASE_SSL_CA_PATH=./certs/supabase-root.crt`. El servidor valida el certificado TLS; no desactives esa validación. Configura `FRONTEND_ORIGINS` con los dominios exactos autorizados.
 
-## Publicación
+## Publicación con GitHub Pages
 
-El backend y el frontend se despliegan como servicios separados:
+El workflow `.github/workflows/deploy-pages.yml` publica el frontend desde `client/` en cada cambio a `main`. En GitHub:
 
-- **Backend en Render:** crea un Web Service desde este repositorio, con `npm install` como build command y `npm start` como start command. Configura las variables secretas `GEMINI_API_KEY`, `DATABASE_URL`, `DATABASE_SSL=true`, `DATABASE_SSL_CA_PATH` y `FRONTEND_ORIGINS`. Monta el certificado raíz de Supabase en el servicio y apunta `DATABASE_SSL_CA_PATH` a su ruta.
-- **Frontend en Vercel o Netlify:** usa `client` como directorio raíz, `npm run build` como build command y `dist` como directorio de publicación. Define `VITE_API_URL` con el origen público del backend, por ejemplo `https://tu-api.onrender.com`.
+1. Abre **Settings → Pages** y selecciona **GitHub Actions** como fuente.
+2. En **Settings → Secrets and variables → Actions → Variables**, crea `VITE_API_URL` con el origen público del backend, por ejemplo `https://tu-api.onrender.com`. No es una clave secreta.
+3. La página estará en `https://squizo117.github.io/generador_publicidad/`.
 
-Después de publicar el frontend, agrega su origen exacto a `FRONTEND_ORIGINS` en el backend. `VITE_API_URL` no es una clave secreta; nunca pongas `GEMINI_API_KEY` en las variables `VITE_*`.
+GitHub Pages solo sirve archivos estáticos; no ejecuta Express. Publica el backend como **Web Service en Render**, usando la raíz del repositorio, `npm install` como build command y `npm start` como start command. Configura allí `GEMINI_API_KEY`, `GEMINI_MODEL`, `DATABASE_URL`, `DATABASE_SSL=true`, `DATABASE_SSL_CA_PATH` y `FRONTEND_ORIGINS`. Monta el certificado raíz de Supabase en Render y asigna su ruta a `DATABASE_SSL_CA_PATH`. Una vez publicado el API, fija `VITE_API_URL` a su origen y `FRONTEND_ORIGINS` a `https://squizo117.github.io` (sin la ruta del proyecto).
+
+Nunca pongas `GEMINI_API_KEY` en GitHub Pages ni en variables `VITE_*`; solo debe existir en el entorno privado del backend.
 
 ## Endpoints
 
