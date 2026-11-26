@@ -317,7 +317,7 @@ function App() {
               }}
             >
               <option value="basic">Básico · rápido y económico</option>
-              <option value="advanced">Potente · Gemini Flash</option>
+              <option value="advanced">Potente · Gemini 3.8 Flash</option>
             </select>
           </label>
           <p className="model-picker-help">
