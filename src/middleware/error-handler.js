@@ -19,6 +19,20 @@ export function errorHandler(error, request, response, next) {
     });
   }
 
+  const isAiUnavailable = (
+    error.name === 'ApiError'
+    && Number.isInteger(error.status)
+    && error.status >= 500
+  ) || error.cause?.name === 'HeadersTimeoutError';
+
+  if (isAiUnavailable) {
+    console.error('Error de API:', error);
+    response.set('Retry-After', '30');
+    return response.status(503).json({
+      error: 'El servicio de IA está temporalmente ocupado. Intenta de nuevo en unos minutos.'
+    });
+  }
+
   console.error('Error de API:', error);
   const status = Number.isInteger(error.status) && error.status >= 400 && error.status < 500
     ? error.status

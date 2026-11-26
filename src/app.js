@@ -10,6 +10,10 @@ import historyRouter from './routes/history.js';
 
 export const app = express();
 
+if (config.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.disable('x-powered-by');
 app.use(helmet());
 app.use(cors({
