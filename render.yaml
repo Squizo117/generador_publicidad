@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: generador-publicidad-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: true
+      - key: DATABASE_SSL_CA_PATH
+        value: /etc/secrets/supabase-root.crt
+      - key: FRONTEND_ORIGINS
+        value: https://squizo117.github.io

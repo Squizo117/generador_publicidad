@@ -45,7 +45,11 @@ El workflow `.github/workflows/deploy-pages.yml` publica el frontend desde `clie
 2. En **Settings → Secrets and variables → Actions → Variables**, crea `VITE_API_URL` con el origen público del backend, por ejemplo `https://tu-api.onrender.com`. No es una clave secreta.
 3. La página estará en `https://squizo117.github.io/generador_publicidad/`.
 
-GitHub Pages solo sirve archivos estáticos; no ejecuta Express. Publica el backend como **Web Service en Render**, usando la raíz del repositorio, `npm install` como build command y `npm start` como start command. Configura allí `GEMINI_API_KEY`, `GEMINI_MODEL`, `DATABASE_URL`, `DATABASE_SSL=true`, `DATABASE_SSL_CA_PATH` y `FRONTEND_ORIGINS`. Monta el certificado raíz de Supabase en Render y asigna su ruta a `DATABASE_SSL_CA_PATH`. Una vez publicado el API, fija `VITE_API_URL` a su origen y `FRONTEND_ORIGINS` a `https://squizo117.github.io` (sin la ruta del proyecto).
+GitHub Pages solo sirve archivos estáticos; no ejecuta Express. El archivo `render.yaml` deja preparado el backend como **Web Service en Render**: selecciona **New → Blueprint**, conecta este repositorio y Render leerá el archivo. Completa los valores solicitados para `GEMINI_API_KEY` y `DATABASE_URL`.
+
+Para `DATABASE_URL` en Render, usa la URI de Supabase **Session pooler** (IPv4, puerto 5432) copiada desde **Connect**. En el servicio de Render, añade en **Environment → Secret Files** un archivo llamado `supabase-root.crt` con el certificado raíz descargado de Supabase. El Blueprint ya apunta `DATABASE_SSL_CA_PATH` a `/etc/secrets/supabase-root.crt`.
+
+Después del primer despliegue, copia el origen `https://...onrender.com` del API a la variable de repositorio `VITE_API_URL` en **Settings → Secrets and variables → Actions → Variables** y ejecuta el workflow `Deploy frontend to GitHub Pages` desde **Actions → Run workflow**. El Blueprint permite probar en el plan gratuito; Render puede suspender servicios gratuitos inactivos y tardar al despertar.
 
 Nunca pongas `GEMINI_API_KEY` en GitHub Pages ni en variables `VITE_*`; solo debe existir en el entorno privado del backend.
 
