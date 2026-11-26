@@ -5,7 +5,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY es obligatoria'),
-  GEMINI_MODEL: z.string().min(1).default('gemini-3.6-flash'),
+  GEMINI_MODEL: z.string().min(1).default('gemini-3.5-flash-lite'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL es obligatoria'),
   DATABASE_SSL: z.enum(['true', 'false']).default('false'),
   FRONTEND_ORIGINS: z.string().default('http://localhost:5173')
