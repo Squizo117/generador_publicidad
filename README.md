@@ -27,7 +27,7 @@ sql/001_initial_schema.sql
 3. Ejecuta `npm run db:migrate` para crear las tablas usando `DATABASE_URL`, o pega `sql/001_initial_schema.sql` en el SQL Editor de Supabase.
 4. Inicia en desarrollo con `npm run dev`; producción con `npm start`.
 
-La clave de Gemini se usa exclusivamente en el servidor. `DATABASE_SSL=true` habilita TLS con validación del certificado; configura `FRONTEND_ORIGINS` con los dominios exactos autorizados.
+La clave de Gemini se usa exclusivamente en el servidor. Para Supabase, descarga el certificado raíz en **Database Settings → SSL Configuration**, guárdalo como `certs/supabase-root.crt` y configura `DATABASE_SSL=true` y `DATABASE_SSL_CA_PATH=./certs/supabase-root.crt`. El servidor valida el certificado TLS; no desactives esa validación. Configura `FRONTEND_ORIGINS` con los dominios exactos autorizados.
 
 ## Endpoints
 

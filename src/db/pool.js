@@ -1,11 +1,18 @@
 import pg from 'pg';
-import { config } from '../config/env.js';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { databaseConfig } from '../config/database.js';
 
 const { Pool } = pg;
 
 export const pool = new Pool({
-  connectionString: config.DATABASE_URL,
-  ssl: config.databaseSsl ? { rejectUnauthorized: true } : false,
+  connectionString: databaseConfig.connectionString,
+  ssl: databaseConfig.ssl
+    ? {
+        ca: readFileSync(resolve(databaseConfig.sslCaPath), 'utf8'),
+        rejectUnauthorized: true
+      }
+    : false,
   max: 10,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000
