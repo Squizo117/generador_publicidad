@@ -1,5 +1,6 @@
 node_modules/
 .env
 certs/
+dist/
 npm-debug.log*
 coverage/
