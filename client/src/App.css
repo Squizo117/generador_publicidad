@@ -207,6 +207,37 @@
   padding: 29px 30px 26px;
 }
 
+.model-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 7px;
+}
+
+.model-picker select {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #e4e7df;
+  border-radius: 9px 9px 3px 9px;
+  color: var(--ink);
+  background: #fff;
+  font-size: 12px;
+}
+
+.model-picker select:focus {
+  border-color: #8cae81;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(93, 139, 85, 0.1);
+}
+
+.model-picker-help {
+  margin: 0 0 24px;
+  color: #909890;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .output-panel {
   min-height: 660px;
   padding: 29px 30px 23px;

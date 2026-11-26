@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { pool } from '../db/pool.js';
+import { modelTierSchema } from '../config/model-tier.js';
 import { generateMarketingContent } from '../services/gemini.js';
 import { asyncHandler } from '../utils/async-handler.js';
 
@@ -8,6 +9,7 @@ const router = Router();
 
 const generationSchema = z.object({
   type: z.enum(['anuncio', 'facebook', 'slogan', 'nombres']),
+  modelTier: modelTierSchema,
   businessType: z.string().trim().min(2).max(120),
   product: z.string().trim().min(2).max(500),
   channel: z.string().trim().max(100).optional(),

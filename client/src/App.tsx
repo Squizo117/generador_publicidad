@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { api } from './api'
-import type { AppMode, ChatMessage, GenerationInput, GenerationRecord, GenerationType } from './types'
+import type { AppMode, ChatMessage, GenerationInput, GenerationRecord, GenerationType, ModelTier } from './types'
 import './App.css'
 
 const MODES: { id: AppMode; label: string; number: string }[] = [
@@ -26,6 +26,7 @@ const BUSINESS_TYPES = [
 const TONES = ['Cercano', 'Profesional', 'Divertido', 'Elegante', 'Inspirador', 'Urgente']
 const CHANNELS = ['Facebook', 'Instagram', 'WhatsApp', 'TikTok', 'Volantes / impresión', 'General']
 const CHAT_STORAGE_KEY = 'impulso-chat-session'
+const MODEL_TIER_STORAGE_KEY = 'impulso-model-tier'
 
 const MODE_LABELS: Record<GenerationType, string> = {
   anuncio: 'Anuncio comercial',
@@ -43,6 +44,14 @@ function readChatSession() {
     return sessionStorage.getItem(CHAT_STORAGE_KEY) ?? undefined
   } catch {
     return undefined
+  }
+}
+
+function readModelTier(): ModelTier {
+  try {
+    return localStorage.getItem(MODEL_TIER_STORAGE_KEY) === 'advanced' ? 'advanced' : 'basic'
+  } catch {
+    return 'basic'
   }
 }
 
@@ -71,6 +80,7 @@ function formatDate(value: string) {
 
 function App() {
   const [mode, setMode] = useState<AppMode>('anuncio')
+  const [modelTier, setModelTier] = useState<ModelTier>(readModelTier)
   const [businessType, setBusinessType] = useState('Cafetería')
   const [customBusinessType, setCustomBusinessType] = useState('')
   const [product, setProduct] = useState('')
@@ -100,6 +110,14 @@ function App() {
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MODEL_TIER_STORAGE_KEY, modelTier)
+    } catch {
+      // The selected model remains active until the page is closed.
+    }
+  }, [modelTier])
 
   useEffect(() => {
     let active = true
@@ -155,6 +173,7 @@ function App() {
 
     const input: GenerationInput = {
       type: mode,
+      modelTier,
       businessType: resolvedBusinessType,
       product: product.trim(),
       channel,
@@ -186,7 +205,7 @@ function App() {
     setIsSending(true)
 
     try {
-      const response = await api.sendChat(message, sessionId)
+      const response = await api.sendChat(message, modelTier, sessionId)
       if (response.sessionId !== sessionId) {
         setSessionId(response.sessionId)
         saveChatSession(response.sessionId)
@@ -287,6 +306,23 @@ function App() {
 
       <div className="workspace">
         <section className="panel input-panel">
+          <label className="model-picker">
+            <span className="field-label">MODELO DE IA · TEXTO</span>
+            <select
+              value={modelTier}
+              disabled={isGenerating || isSending}
+              onChange={(event) => {
+                const nextTier = event.target.value
+                if (nextTier === 'basic' || nextTier === 'advanced') setModelTier(nextTier)
+              }}
+            >
+              <option value="basic">Básico · rápido y económico</option>
+              <option value="advanced">Potente · Gemini Flash</option>
+            </select>
+          </label>
+          <p className="model-picker-help">
+            Se aplica al chat y al contenido. La generación de imágenes usará un modelo independiente.
+          </p>
           {mode === 'chat' ? (
             <div className="chat-guide">
               <div className="panel-kicker"><span>05</span> ASISTENTE VIRTUAL</div>

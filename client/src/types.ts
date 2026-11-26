@@ -1,8 +1,10 @@
 export type GenerationType = 'anuncio' | 'facebook' | 'slogan' | 'nombres'
 export type AppMode = GenerationType | 'chat'
+export type ModelTier = 'basic' | 'advanced'
 
 export interface GenerationInput {
   type: GenerationType
+  modelTier: ModelTier
   businessType: string
   product: string
   channel: string

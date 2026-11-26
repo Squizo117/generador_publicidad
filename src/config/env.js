@@ -5,7 +5,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY es obligatoria'),
-  GEMINI_MODEL: z.string().min(1).default('gemini-3.5-flash-lite'),
+  GEMINI_MODEL_BASIC: z.string().min(1).default('gemini-3.5-flash-lite'),
+  GEMINI_MODEL_ADVANCED: z.string().min(1).default('gemini-3.8-flash'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL es obligatoria'),
   DATABASE_SSL: z.enum(['true', 'false']).default('false'),
   FRONTEND_ORIGINS: z.string().default('http://localhost:5173')
@@ -22,6 +23,10 @@ if (!parsed.success) {
 
 export const config = {
   ...parsed.data,
+  geminiModels: {
+    basic: parsed.data.GEMINI_MODEL_BASIC,
+    advanced: parsed.data.GEMINI_MODEL_ADVANCED
+  },
   frontendOrigins: parsed.data.FRONTEND_ORIGINS.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),

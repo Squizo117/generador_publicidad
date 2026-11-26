@@ -30,7 +30,7 @@ sql/001_initial_schema.sql
 ## Configuración
 
 1. Instala dependencias con `npm install`.
-2. Copia `.env.example` a `.env` y define `GEMINI_API_KEY` y `DATABASE_URL`.
+2. Copia `.env.example` a `.env` y define `GEMINI_API_KEY` y `DATABASE_URL`. `GEMINI_MODEL_BASIC` y `GEMINI_MODEL_ADVANCED` configuran los perfiles básico y potente; por defecto usan `gemini-3.5-flash-lite` y `gemini-3.8-flash`.
 3. Ejecuta `npm run db:migrate` para crear las tablas usando `DATABASE_URL`, o pega `sql/001_initial_schema.sql` en el SQL Editor de Supabase.
 4. Inicia el backend con `npm run dev` y, en otra terminal, el frontend con `npm run client:dev`. Abre `http://localhost:5173`; Vite envía `/api` al backend local.
 5. Compila el frontend con `npm run client:build` (o `npm run build` desde la raíz).
@@ -53,12 +53,14 @@ Después del primer despliegue, copia el origen `https://...onrender.com` del AP
 
 Nunca pongas `GEMINI_API_KEY` en GitHub Pages ni en variables `VITE_*`; solo debe existir en el entorno privado del backend.
 
+El selector de modelo del frontend elige entre esos dos perfiles y se aplica tanto al chat como a la generación de texto. El perfil avanzado puede experimentar más demanda o consumir más cuota. La generación de imágenes requiere un modelo multimodal y un flujo de API propios, por lo que se configurará aparte cuando se implemente.
+
 ## Endpoints
 
 - `GET /health` — estado del servidor.
 - `POST /api/generate` — crea contenido y guarda el resultado.
 - `GET /api/history?limit=20&offset=0` — historial paginado de generaciones.
-- `POST /api/chat` — envía un mensaje; manda `{ "message": "..." }` para iniciar sesión o incluye `sessionId` para continuar.
+- `POST /api/chat` — envía `{ "message": "...", "modelTier": "basic" }`; `modelTier` es opcional y acepta `basic` o `advanced`. Incluye `sessionId` para continuar una conversación.
 - `GET /api/chat/sessions/:sessionId/messages` — obtiene el historial de mensajes de una sesión.
 
 Ejemplo de generación:
@@ -66,6 +68,7 @@ Ejemplo de generación:
 ```json
 {
   "type": "facebook",
+  "modelTier": "basic",
   "businessType": "cafetería",
   "product": "café frío y pan artesanal",
   "channel": "Facebook",

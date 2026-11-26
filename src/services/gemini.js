@@ -23,7 +23,7 @@ function contextDetails(input) {
 
 export async function generateMarketingContent(input) {
   const result = await ai.models.generateContent({
-    model: config.GEMINI_MODEL,
+    model: config.geminiModels[input.modelTier],
     contents: `${generationInstructions[input.type]}\n\n${contextDetails(input)}`,
     config: {
       temperature: 0.8,
@@ -38,7 +38,7 @@ export async function generateMarketingContent(input) {
   return result.text.trim();
 }
 
-export async function replyToChat(messages, message) {
+export async function replyToChat(messages, message, modelTier) {
   const contents = [
     ...messages.map((item) => ({
       role: item.role === 'assistant' ? 'model' : 'user',
@@ -48,7 +48,7 @@ export async function replyToChat(messages, message) {
   ];
 
   const result = await ai.models.generateContent({
-    model: config.GEMINI_MODEL,
+    model: config.geminiModels[modelTier],
     contents,
     config: {
       temperature: 0.7,

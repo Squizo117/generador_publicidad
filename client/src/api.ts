@@ -1,4 +1,4 @@
-import type { ChatMessage, GenerationInput, GenerationRecord } from './types'
+import type { ChatMessage, GenerationInput, GenerationRecord, ModelTier } from './types'
 
 const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
 
@@ -36,10 +36,10 @@ export const api = {
   history: () =>
     request<{ items: GenerationRecord[] }>('/api/history?limit=6&offset=0'),
 
-  sendChat: (message: string, sessionId?: string) =>
+  sendChat: (message: string, modelTier: ModelTier, sessionId?: string) =>
     request<{ sessionId: string; message: string }>('/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ message, ...(sessionId ? { sessionId } : {}) }),
+      body: JSON.stringify({ message, modelTier, ...(sessionId ? { sessionId } : {}) }),
     }),
 
   chatMessages: (sessionId: string) =>

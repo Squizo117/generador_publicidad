@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { pool } from '../db/pool.js';
+import { modelTierSchema } from '../config/model-tier.js';
 import { replyToChat } from '../services/gemini.js';
 import { asyncHandler } from '../utils/async-handler.js';
 
@@ -8,6 +9,7 @@ const router = Router();
 
 const chatSchema = z.object({
   sessionId: z.string().uuid().optional(),
+  modelTier: modelTierSchema,
   message: z.string().trim().min(1).max(4_000)
 }).strict();
 
@@ -39,7 +41,7 @@ router.post('/', asyncHandler(async (request, response) => {
     [sessionId]
   );
   const messages = history.rows.reverse();
-  const answer = await replyToChat(messages, input.message);
+  const answer = await replyToChat(messages, input.message, input.modelTier);
 
   const client = await pool.connect();
   try {
