@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { api } from './api'
-import { createVector, type GeneratedVector, type VectorSize, type VectorStyle } from './image-generator'
+import { vectorDataUrl, type GeneratedVector, type VectorSize, type VectorStyle } from './image-generator'
 import type { AppMode, ChatMessage, GenerationInput, GenerationRecord, GenerationType, ModelTier } from './types'
 import './App.css'
 
@@ -106,6 +106,11 @@ function App() {
   const [imageSize, setImageSize] = useState<VectorSize>('cuadrado')
   const [imageResult, setImageResult] = useState<GeneratedVector | null>(null)
   const [imageError, setImageError] = useState('')
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const vectorUrl = useMemo(
+    () => imageResult ? vectorDataUrl(imageResult.svg) : '',
+    [imageResult]
+  )
 
   useEffect(() => {
     let active = true
@@ -201,7 +206,7 @@ function App() {
     }
   }
 
-  function handleGenerateImage(event: FormEvent<HTMLFormElement>) {
+  async function handleGenerateImage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setImageError('')
 
@@ -221,7 +226,14 @@ function App() {
       size: imageSize,
     }
 
-    setImageResult(createVector(input))
+    setIsGeneratingImage(true)
+    try {
+      setImageResult(await api.generateVector(input))
+    } catch (error) {
+      setImageError(getErrorMessage(error))
+    } finally {
+      setIsGeneratingImage(false)
+    }
   }
 
   async function handleSendChat(event: FormEvent<HTMLFormElement>) {
@@ -353,7 +365,7 @@ function App() {
                 </select>
               </label>
               <p className="model-picker-help">
-                Se aplica al chat y al contenido. Los diseños vectoriales se crean localmente.
+                Se aplica al chat y al contenido. El modo Vector usa Gemini Basic.
               </p>
             </>
           )}
@@ -388,9 +400,9 @@ function App() {
             </div>
           ) : mode === 'imagen' ? (
             <form className="generation-form" onSubmit={handleGenerateImage}>
-              <div className="panel-kicker"><span>06</span> DISEÑO VECTORIAL LOCAL</div>
+              <div className="panel-kicker"><span>06</span> DISEÑO VECTORIAL CON GEMINI</div>
               <h2>Crea una ilustración para tu negocio.</h2>
-              <p className="panel-description">Armamos una composición SVG en tu navegador, sin llamar a una API de imágenes.</p>
+              <p className="panel-description">Gemini diseña un SVG original según tu negocio, producto, estilo y formato; no se usa una API de imágenes.</p>
 
               <label className="field">
                 <span className="field-label">GIRO DE TU NEGOCIO</span>
@@ -451,10 +463,10 @@ function App() {
 
               {imageError && <p className="error-message" role="alert">{imageError}</p>}
 
-              <button className="primary-button generate-button" type="submit">
-                Crear diseño vectorial <span aria-hidden="true">↗</span>
+              <button className="primary-button generate-button" disabled={isGeneratingImage} type="submit">
+                {isGeneratingImage ? <><span className="spinner" /> Diseñando vector...</> : <>Generar ilustración <span aria-hidden="true">↗</span></>}
               </button>
-              <p className="form-footnote">Es una ilustración SVG, no una fotografía. Puedes descargarla y ampliarla sin perder calidad.</p>
+              <p className="form-footnote">Usa Gemini de texto y su cuota disponible. El SVG se puede ampliar sin perder calidad.</p>
             </form>
           ) : (
             <form className="generation-form" onSubmit={handleGenerate}>
@@ -601,19 +613,24 @@ function App() {
             <>
               <div className="output-header">
                 <div>
-                  <div className="panel-kicker">ILUSTRACIÓN VECTORIAL LOCAL</div>
+                  <div className="panel-kicker">SVG CREADO POR GEMINI</div>
                   <h2>Tu diseño.</h2>
                 </div>
                 {imageResult && (
-                  <a className="copy-button" href={imageResult.imageUrl} download="impulso-anuncio.svg">
+                  <a className="copy-button" href={vectorUrl} download="impulso-anuncio.svg">
                     Descargar SVG
                   </a>
                 )}
               </div>
               {imageResult ? (
                 <div className="image-preview-card">
-                  <img src={imageResult.imageUrl} alt={imageResult.alt} />
-                  <p>{imageResult.dimensions} · SVG creado en este dispositivo</p>
+                  <img src={vectorUrl} alt={imageResult.alt} />
+                  <p>{imageResult.dimensions} · Vector generado con Gemini</p>
+                </div>
+              ) : isGeneratingImage ? (
+                <div className="image-generating" role="status">
+                  <span className="spinner spinner-light" />
+                  <p>Gemini está creando una ilustración original. Puede tardar un momento...</p>
                 </div>
               ) : (
                 <div className="empty-result">
@@ -626,7 +643,7 @@ function App() {
                   </div>
                   <p className="empty-kicker">TU PRÓXIMO DISEÑO</p>
                   <h3>Una composición<br />vectorial para tu marca.</h3>
-                  <p>Elige tu producto, estilo y formato para crear una ilustración SVG lista para descargar.</p>
+                  <p>Gemini diseñará una ilustración SVG original a partir de tus datos y estilo.</p>
                 </div>
               )}
             </>

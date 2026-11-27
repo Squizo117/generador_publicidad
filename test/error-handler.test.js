@@ -61,3 +61,16 @@ test('returns a retryable 503 for Gemini request timeouts', () => {
   assert.equal(response.headers['Retry-After'], '30');
   assert.match(response.body.error, /servicio de IA está temporalmente ocupado/);
 });
+
+test('explains Gemini rate limits and returns a retryable 503', () => {
+  const error = Object.assign(new Error('quota exceeded'), {
+    name: 'ApiError',
+    status: 429
+  });
+
+  const response = handleWithoutLogging(error);
+
+  assert.equal(response.statusCode, 503);
+  assert.equal(response.headers['Retry-After'], '30');
+  assert.match(response.body.error, /límite temporal de solicitudes o cuota/);
+});

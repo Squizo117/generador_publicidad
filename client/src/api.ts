@@ -1,4 +1,5 @@
 import type { ChatMessage, GenerationInput, GenerationRecord, ModelTier } from './types'
+import type { GeneratedVector, VectorInput } from './image-generator'
 
 const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
 
@@ -29,6 +30,12 @@ export const api = {
 
   generate: (input: GenerationInput) =>
     request<{ generation: GenerationRecord }>('/api/generate', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  generateVector: (input: VectorInput) =>
+    request<GeneratedVector>('/api/images', {
       method: 'POST',
       body: JSON.stringify(input),
     }),

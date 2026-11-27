@@ -7,6 +7,7 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import chatRouter from './routes/chat.js';
 import generateRouter from './routes/generate.js';
 import historyRouter from './routes/history.js';
+import imagesRouter from './routes/images.js';
 
 export const app = express();
 
@@ -39,6 +40,7 @@ app.get('/health', (request, response) => {
   response.json({ status: 'ok' });
 });
 app.use('/api/generate', generateRouter);
+app.use('/api/images', imagesRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/history', historyRouter);
 app.use(notFoundHandler);

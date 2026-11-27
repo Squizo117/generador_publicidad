@@ -20,7 +20,7 @@ export function errorHandler(error, request, response, next) {
   }
 
   const isAiUnavailable = (
-    (error.name === 'ApiError' && error.status >= 500)
+    (error.name === 'ApiError' && (error.status === 429 || error.status >= 500))
     || error.cause?.name === 'HeadersTimeoutError'
   );
 
@@ -28,7 +28,9 @@ export function errorHandler(error, request, response, next) {
     console.error('Error de API:', error);
     response.set('Retry-After', '30');
     return response.status(503).json({
-      error: 'El servicio de IA está temporalmente ocupado. Intenta de nuevo en unos minutos.'
+      error: error.status === 429
+        ? 'Gemini alcanzó un límite temporal de solicitudes o cuota. Revisa la cuota disponible y vuelve a intentar más tarde.'
+        : 'El servicio de IA está temporalmente ocupado. Intenta de nuevo en unos minutos.'
     });
   }
 

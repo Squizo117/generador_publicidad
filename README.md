@@ -53,12 +53,13 @@ Después del primer despliegue, copia el origen `https://...onrender.com` del AP
 
 Nunca pongas `GEMINI_API_KEY` en GitHub Pages ni en variables `VITE_*`; solo debe existir en el entorno privado del backend.
 
-El selector de modelo del frontend elige entre los perfiles de Gemini para chat y generación de texto. La pestaña **Vector** crea en el navegador composiciones SVG cuadradas, verticales u horizontales, con estilos y textos basados en los datos del formulario. No llama a una API de imágenes; los vectores son ilustraciones geométricas de muestra, no fotografías ni representaciones fotorrealistas del producto.
+El selector de modelo del frontend elige entre los perfiles de Gemini para chat y generación de texto. La pestaña **Vector** solicita a Gemini Basic una ilustración SVG distinta según el giro, producto, estilo y formato. No usa una API de imágenes, pero sí consume la cuota de texto de Gemini. El backend limita estas solicitudes y sanitiza el SVG para retirar scripts, atributos de evento y recursos externos antes de devolverlo.
 
 ## Endpoints
 
 - `GET /health` — estado del servidor.
 - `POST /api/generate` — crea contenido y guarda el resultado.
+- `POST /api/images` — genera y sanitiza una ilustración SVG con Gemini Basic usando `{ "businessType": "cafetería", "product": "café frío", "style": "organico", "size": "cuadrado" }`.
 - `GET /api/history?limit=20&offset=0` — historial paginado de generaciones.
 - `POST /api/chat` — envía `{ "message": "...", "modelTier": "basic" }`; `modelTier` es opcional y acepta `basic` o `advanced`. Incluye `sessionId` para continuar una conversación.
 - `GET /api/chat/sessions/:sessionId/messages` — obtiene el historial de mensajes de una sesión.
