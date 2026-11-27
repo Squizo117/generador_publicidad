@@ -1,6 +1,6 @@
 # Backend — Generador de publicidad
 
-API REST con Express, Gemini, OpenAI Images y PostgreSQL. Requiere Node.js 20 o superior y una instancia PostgreSQL (incluido Supabase).
+API REST con Express, Gemini y PostgreSQL. Requiere Node.js 20 o superior y una instancia PostgreSQL (incluido Supabase).
 
 ## Estructura
 
@@ -30,12 +30,12 @@ sql/001_initial_schema.sql
 ## Configuración
 
 1. Instala dependencias con `npm install`.
-2. Copia `.env.example` a `.env` y define `GEMINI_API_KEY` y `DATABASE_URL`. Para generar imágenes, añade también `OPENAI_API_KEY`; el modelo se configura con `OPENAI_IMAGE_MODEL` y por defecto usa `gpt-image-2.5-flare`. `GEMINI_MODEL_BASIC` y `GEMINI_MODEL_ADVANCED` configuran los perfiles básico y potente.
+2. Copia `.env.example` a `.env` y define `GEMINI_API_KEY` y `DATABASE_URL`. `GEMINI_MODEL_BASIC` y `GEMINI_MODEL_ADVANCED` configuran los perfiles básico y potente.
 3. Ejecuta `npm run db:migrate` para crear las tablas usando `DATABASE_URL`, o pega `sql/001_initial_schema.sql` en el SQL Editor de Supabase.
 4. Inicia el backend con `npm run dev` y, en otra terminal, el frontend con `npm run client:dev`. Abre `http://localhost:5173`; Vite envía `/api` al backend local.
 5. Compila el frontend con `npm run client:build` (o `npm run build` desde la raíz).
 
-Las claves de Gemini y OpenAI se usan exclusivamente en el servidor. Para Supabase, descarga el certificado raíz en **Database Settings → SSL Configuration**, guárdalo como `certs/supabase-root.crt` y configura `DATABASE_SSL=true` y `DATABASE_SSL_CA_PATH=./certs/supabase-root.crt`. El servidor valida el certificado TLS; no desactives esa validación. Configura `FRONTEND_ORIGINS` con los dominios exactos autorizados.
+La clave de Gemini se usa exclusivamente en el servidor. Para Supabase, descarga el certificado raíz en **Database Settings → SSL Configuration**, guárdalo como `certs/supabase-root.crt` y configura `DATABASE_SSL=true` y `DATABASE_SSL_CA_PATH=./certs/supabase-root.crt`. El servidor valida el certificado TLS; no desactives esa validación. Configura `FRONTEND_ORIGINS` con los dominios exactos autorizados.
 
 ## Publicación con GitHub Pages
 
@@ -45,21 +45,20 @@ El workflow `.github/workflows/deploy-pages.yml` publica el frontend desde `clie
 2. En **Settings → Secrets and variables → Actions → Variables**, crea `VITE_API_URL` con el origen público del backend, por ejemplo `https://tu-api.onrender.com`. No es una clave secreta.
 3. La página estará en `https://squizo117.github.io/generador_publicidad/`.
 
-GitHub Pages solo sirve archivos estáticos; no ejecuta Express. El archivo `render.yaml` deja preparado el backend como **Web Service en Render**: selecciona **New → Blueprint**, conecta este repositorio y Render leerá el archivo. Completa los valores solicitados para `GEMINI_API_KEY`, `OPENAI_API_KEY` y `DATABASE_URL`.
+GitHub Pages solo sirve archivos estáticos; no ejecuta Express. El archivo `render.yaml` deja preparado el backend como **Web Service en Render**: selecciona **New → Blueprint**, conecta este repositorio y Render leerá el archivo. Completa los valores solicitados para `GEMINI_API_KEY` y `DATABASE_URL`.
 
 Para `DATABASE_URL` en Render, usa la URI de Supabase **Session pooler** (IPv4, puerto 5432) copiada desde **Connect**. En el servicio de Render, añade en **Environment → Secret Files** un archivo llamado `supabase-root.crt` con el certificado raíz descargado de Supabase. El Blueprint ya apunta `DATABASE_SSL_CA_PATH` a `/etc/secrets/supabase-root.crt`.
 
 Después del primer despliegue, copia el origen `https://...onrender.com` del API a la variable de repositorio `VITE_API_URL` en **Settings → Secrets and variables → Actions → Variables** y ejecuta el workflow `Deploy frontend to GitHub Pages` desde **Actions → Run workflow**. El Blueprint permite probar en el plan gratuito; Render puede suspender servicios gratuitos inactivos y tardar al despertar.
 
-Nunca pongas `GEMINI_API_KEY` ni `OPENAI_API_KEY` en GitHub Pages ni en variables `VITE_*`; solo deben existir en el entorno privado del backend.
+Nunca pongas `GEMINI_API_KEY` en GitHub Pages ni en variables `VITE_*`; solo debe existir en el entorno privado del backend.
 
-El selector de modelo del frontend elige entre los perfiles de Gemini para chat y generación de texto. La pestaña **Imagen IA** usa OpenAI Images por separado; permite generar una imagen cuadrada, vertical u horizontal en varios estilos y descargarla como PNG. Estas imágenes no se guardan en el historial y cada dirección IP puede solicitar hasta 5 imágenes cada 15 minutos. La API puede requerir que la organización de OpenAI tenga habilitado el acceso a los modelos de imágenes.
+El selector de modelo del frontend elige entre los perfiles de Gemini para chat y generación de texto. La pestaña **Vector** crea en el navegador composiciones SVG cuadradas, verticales u horizontales, con estilos y textos basados en los datos del formulario. No llama a una API de imágenes; los vectores son ilustraciones geométricas de muestra, no fotografías ni representaciones fotorrealistas del producto.
 
 ## Endpoints
 
 - `GET /health` — estado del servidor.
 - `POST /api/generate` — crea contenido y guarda el resultado.
-- `POST /api/images` — genera una imagen con `{ "businessType": "cafetería", "product": "café frío", "style": "fotografia", "size": "cuadrado" }`.
 - `GET /api/history?limit=20&offset=0` — historial paginado de generaciones.
 - `POST /api/chat` — envía `{ "message": "...", "modelTier": "basic" }`; `modelTier` es opcional y acepta `basic` o `advanced`. Incluye `sessionId` para continuar una conversación.
 - `GET /api/chat/sessions/:sessionId/messages` — obtiene el historial de mensajes de una sesión.

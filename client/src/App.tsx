@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { api } from './api'
-import type { AppMode, ChatMessage, GeneratedImage, GenerationInput, GenerationRecord, GenerationType, ImageGenerationInput, ModelTier } from './types'
+import { createVector, type GeneratedVector, type VectorSize, type VectorStyle } from './image-generator'
+import type { AppMode, ChatMessage, GenerationInput, GenerationRecord, GenerationType, ModelTier } from './types'
 import './App.css'
 
 const MODES: { id: AppMode; label: string; number: string }[] = [
@@ -9,7 +10,7 @@ const MODES: { id: AppMode; label: string; number: string }[] = [
   { id: 'slogan', label: 'Frases', number: '03' },
   { id: 'nombres', label: 'Nombres', number: '04' },
   { id: 'chat', label: 'Asistente IA', number: '05' },
-  { id: 'imagen', label: 'Imagen IA', number: '06' },
+  { id: 'imagen', label: 'Vector', number: '06' },
 ]
 
 const BUSINESS_TYPES = [
@@ -101,11 +102,10 @@ function App() {
   const [sessionId, setSessionId] = useState<string | undefined>(readChatSession)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatDraft, setChatDraft] = useState('')
-  const [imageStyle, setImageStyle] = useState<ImageGenerationInput['style']>('fotografia')
-  const [imageSize, setImageSize] = useState<ImageGenerationInput['size']>('cuadrado')
-  const [imageResult, setImageResult] = useState<GeneratedImage | null>(null)
+  const [imageStyle, setImageStyle] = useState<VectorStyle>('organico')
+  const [imageSize, setImageSize] = useState<VectorSize>('cuadrado')
+  const [imageResult, setImageResult] = useState<GeneratedVector | null>(null)
   const [imageError, setImageError] = useState('')
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -201,7 +201,7 @@ function App() {
     }
   }
 
-  async function handleGenerateImage(event: FormEvent<HTMLFormElement>) {
+  function handleGenerateImage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setImageError('')
 
@@ -214,21 +214,14 @@ function App() {
       return
     }
 
-    const input: ImageGenerationInput = {
+    const input = {
       businessType: resolvedBusinessType,
       product: product.trim(),
       style: imageStyle,
       size: imageSize,
     }
 
-    setIsGeneratingImage(true)
-    try {
-      setImageResult(await api.generateImage(input))
-    } catch (error) {
-      setImageError(getErrorMessage(error))
-    } finally {
-      setIsGeneratingImage(false)
-    }
+    setImageResult(createVector(input))
   }
 
   async function handleSendChat(event: FormEvent<HTMLFormElement>) {
@@ -360,7 +353,7 @@ function App() {
                 </select>
               </label>
               <p className="model-picker-help">
-                Se aplica al chat y al contenido. Las imágenes usan un modelo de OpenAI independiente.
+                Se aplica al chat y al contenido. Los diseños vectoriales se crean localmente.
               </p>
             </>
           )}
@@ -395,9 +388,9 @@ function App() {
             </div>
           ) : mode === 'imagen' ? (
             <form className="generation-form" onSubmit={handleGenerateImage}>
-              <div className="panel-kicker"><span>06</span> GENERACIÓN CON OPENAI</div>
-              <h2>Crea una imagen para tu negocio.</h2>
-              <p className="panel-description">Describe qué quieres promocionar y elige un estilo y formato.</p>
+              <div className="panel-kicker"><span>06</span> DISEÑO VECTORIAL LOCAL</div>
+              <h2>Crea una ilustración para tu negocio.</h2>
+              <p className="panel-description">Armamos una composición SVG en tu navegador, sin llamar a una API de imágenes.</p>
 
               <label className="field">
                 <span className="field-label">GIRO DE TU NEGOCIO</span>
@@ -436,10 +429,10 @@ function App() {
                   <span className="field-label">ESTILO VISUAL</span>
                   <select value={imageStyle} onChange={(event) => {
                     const style = event.target.value
-                    if (style === 'fotografia' || style === 'ilustracion' || style === 'editorial') setImageStyle(style)
+                    if (style === 'organico' || style === 'minimalista' || style === 'editorial') setImageStyle(style)
                   }}>
-                    <option value="fotografia">Fotografía</option>
-                    <option value="ilustracion">Ilustración</option>
+                    <option value="organico">Orgánico</option>
+                    <option value="minimalista">Minimalista</option>
                     <option value="editorial">Editorial</option>
                   </select>
                 </label>
@@ -458,10 +451,10 @@ function App() {
 
               {imageError && <p className="error-message" role="alert">{imageError}</p>}
 
-              <button className="primary-button generate-button" disabled={isGeneratingImage} type="submit">
-                {isGeneratingImage ? <><span className="spinner" /> Creando imagen...</> : <>Generar imagen <span aria-hidden="true">↗</span></>}
+              <button className="primary-button generate-button" type="submit">
+                Crear diseño vectorial <span aria-hidden="true">↗</span>
               </button>
-              <p className="form-footnote">La imagen no incluirá texto; podrás agregarlo en tu diseño final.</p>
+              <p className="form-footnote">Es una ilustración SVG, no una fotografía. Puedes descargarla y ampliarla sin perder calidad.</p>
             </form>
           ) : (
             <form className="generation-form" onSubmit={handleGenerate}>
@@ -608,24 +601,19 @@ function App() {
             <>
               <div className="output-header">
                 <div>
-                  <div className="panel-kicker">IMAGEN GENERADA CON OPENAI</div>
-                  <h2>Tu imagen.</h2>
+                  <div className="panel-kicker">ILUSTRACIÓN VECTORIAL LOCAL</div>
+                  <h2>Tu diseño.</h2>
                 </div>
                 {imageResult && (
-                  <a className="copy-button" href={imageResult.image} download="impulso-anuncio.png">
-                    Descargar PNG
+                  <a className="copy-button" href={imageResult.imageUrl} download="impulso-anuncio.svg">
+                    Descargar SVG
                   </a>
                 )}
               </div>
               {imageResult ? (
                 <div className="image-preview-card">
-                  <img src={imageResult.image} alt={`Imagen publicitaria de ${product}`} />
-                  <p>{imageResult.size} · Generada con OpenAI</p>
-                </div>
-              ) : isGeneratingImage ? (
-                <div className="image-generating" role="status">
-                  <span className="spinner spinner-light" />
-                  <p>OpenAI está creando tu imagen. Esto puede tardar un momento...</p>
+                  <img src={imageResult.imageUrl} alt={imageResult.alt} />
+                  <p>{imageResult.dimensions} · SVG creado en este dispositivo</p>
                 </div>
               ) : (
                 <div className="empty-result">
@@ -636,9 +624,9 @@ function App() {
                     <span className="art-spark art-spark-one">✳</span>
                     <span className="art-spark art-spark-two">✦</span>
                   </div>
-                  <p className="empty-kicker">TU PRÓXIMA CAMPAÑA</p>
-                  <h3>Una idea, una imagen<br />hecha para tu marca.</h3>
-                  <p>Configura el producto, estilo y formato para generar una imagen publicitaria.</p>
+                  <p className="empty-kicker">TU PRÓXIMO DISEÑO</p>
+                  <h3>Una composición<br />vectorial para tu marca.</h3>
+                  <p>Elige tu producto, estilo y formato para crear una ilustración SVG lista para descargar.</p>
                 </div>
               )}
             </>

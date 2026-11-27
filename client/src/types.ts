@@ -2,18 +2,6 @@ export type GenerationType = 'anuncio' | 'facebook' | 'slogan' | 'nombres'
 export type AppMode = GenerationType | 'chat' | 'imagen'
 export type ModelTier = 'basic' | 'advanced'
 
-export interface ImageGenerationInput {
-  businessType: string
-  product: string
-  style: 'fotografia' | 'ilustracion' | 'editorial'
-  size: 'cuadrado' | 'horizontal' | 'vertical'
-}
-
-export interface GeneratedImage {
-  image: string
-  size: string
-}
-
 export interface GenerationInput {
   type: GenerationType
   modelTier: ModelTier
