@@ -1,4 +1,4 @@
-import type { ChatMessage, GenerationInput, GenerationRecord, ModelTier } from './types'
+import type { ChatMessage, GeneratedImage, GenerationInput, GenerationRecord, ImageGenerationInput, ModelTier } from './types'
 
 const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
 
@@ -29,6 +29,12 @@ export const api = {
 
   generate: (input: GenerationInput) =>
     request<{ generation: GenerationRecord }>('/api/generate', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  generateImage: (input: ImageGenerationInput) =>
+    request<GeneratedImage>('/api/images', {
       method: 'POST',
       body: JSON.stringify(input),
     }),

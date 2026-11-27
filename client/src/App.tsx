@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { api } from './api'
-import type { AppMode, ChatMessage, GenerationInput, GenerationRecord, GenerationType, ModelTier } from './types'
+import type { AppMode, ChatMessage, GeneratedImage, GenerationInput, GenerationRecord, GenerationType, ImageGenerationInput, ModelTier } from './types'
 import './App.css'
 
 const MODES: { id: AppMode; label: string; number: string }[] = [
@@ -9,6 +9,7 @@ const MODES: { id: AppMode; label: string; number: string }[] = [
   { id: 'slogan', label: 'Frases', number: '03' },
   { id: 'nombres', label: 'Nombres', number: '04' },
   { id: 'chat', label: 'Asistente IA', number: '05' },
+  { id: 'imagen', label: 'Imagen IA', number: '06' },
 ]
 
 const BUSINESS_TYPES = [
@@ -100,6 +101,11 @@ function App() {
   const [sessionId, setSessionId] = useState<string | undefined>(readChatSession)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatDraft, setChatDraft] = useState('')
+  const [imageStyle, setImageStyle] = useState<ImageGenerationInput['style']>('fotografia')
+  const [imageSize, setImageSize] = useState<ImageGenerationInput['size']>('cuadrado')
+  const [imageResult, setImageResult] = useState<GeneratedImage | null>(null)
+  const [imageError, setImageError] = useState('')
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -153,6 +159,7 @@ function App() {
   function changeMode(nextMode: AppMode) {
     setMode(nextMode)
     setFormError('')
+    setImageError('')
     setNotice('')
   }
 
@@ -161,7 +168,7 @@ function App() {
     setFormError('')
     setNotice('')
 
-    if (mode === 'chat') return
+    if (mode === 'chat' || mode === 'imagen') return
     if (resolvedBusinessType.length < 2) {
       setFormError('Escribe el giro de tu negocio para continuar.')
       return
@@ -191,6 +198,36 @@ function App() {
       setFormError(getErrorMessage(error))
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  async function handleGenerateImage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setImageError('')
+
+    if (resolvedBusinessType.length < 2) {
+      setImageError('Escribe el giro de tu negocio para continuar.')
+      return
+    }
+    if (product.trim().length < 2) {
+      setImageError('Cuéntanos qué producto o servicio quieres mostrar.')
+      return
+    }
+
+    const input: ImageGenerationInput = {
+      businessType: resolvedBusinessType,
+      product: product.trim(),
+      style: imageStyle,
+      size: imageSize,
+    }
+
+    setIsGeneratingImage(true)
+    try {
+      setImageResult(await api.generateImage(input))
+    } catch (error) {
+      setImageError(getErrorMessage(error))
+    } finally {
+      setIsGeneratingImage(false)
     }
   }
 
@@ -306,23 +343,27 @@ function App() {
 
       <div className="workspace">
         <section className="panel input-panel">
-          <label className="model-picker">
-            <span className="field-label">MODELO DE IA · TEXTO</span>
-            <select
-              value={modelTier}
-              disabled={isGenerating || isSending}
-              onChange={(event) => {
-                const nextTier = event.target.value
-                if (nextTier === 'basic' || nextTier === 'advanced') setModelTier(nextTier)
-              }}
-            >
-              <option value="basic">Básico · rápido y económico</option>
-              <option value="advanced">Potente · Gemini 3.8 Flash</option>
-            </select>
-          </label>
-          <p className="model-picker-help">
-            Se aplica al chat y al contenido. La generación de imágenes usará un modelo independiente.
-          </p>
+          {mode !== 'imagen' && (
+            <>
+              <label className="model-picker">
+                <span className="field-label">MODELO DE IA · TEXTO</span>
+                <select
+                  value={modelTier}
+                  disabled={isGenerating || isSending}
+                  onChange={(event) => {
+                    const nextTier = event.target.value
+                    if (nextTier === 'basic' || nextTier === 'advanced') setModelTier(nextTier)
+                  }}
+                >
+                  <option value="basic">Básico · rápido y económico</option>
+                  <option value="advanced">Potente · Gemini 3.8 Flash</option>
+                </select>
+              </label>
+              <p className="model-picker-help">
+                Se aplica al chat y al contenido. Las imágenes usan un modelo de OpenAI independiente.
+              </p>
+            </>
+          )}
           {mode === 'chat' ? (
             <div className="chat-guide">
               <div className="panel-kicker"><span>05</span> ASISTENTE VIRTUAL</div>
@@ -352,6 +393,76 @@ function App() {
                 Tus conversaciones se guardan para mantener el contexto del chat.
               </div>
             </div>
+          ) : mode === 'imagen' ? (
+            <form className="generation-form" onSubmit={handleGenerateImage}>
+              <div className="panel-kicker"><span>06</span> GENERACIÓN CON OPENAI</div>
+              <h2>Crea una imagen para tu negocio.</h2>
+              <p className="panel-description">Describe qué quieres promocionar y elige un estilo y formato.</p>
+
+              <label className="field">
+                <span className="field-label">GIRO DE TU NEGOCIO</span>
+                <select value={businessType} onChange={(event) => setBusinessType(event.target.value)}>
+                  {BUSINESS_TYPES.map((type) => <option key={type}>{type}</option>)}
+                </select>
+              </label>
+
+              {businessType === 'Otro' && (
+                <label className="field">
+                  <span className="field-label">¿A QUÉ SE DEDICA?</span>
+                  <input
+                    maxLength={120}
+                    placeholder="Ej. reparación de bicicletas"
+                    value={customBusinessType}
+                    onChange={(event) => setCustomBusinessType(event.target.value)}
+                    required
+                  />
+                </label>
+              )}
+
+              <label className="field">
+                <span className="field-label">PRODUCTO O SERVICIO</span>
+                <textarea
+                  maxLength={500}
+                  placeholder="Ej. café frío con espuma de vainilla, servido en vaso transparente"
+                  rows={3}
+                  value={product}
+                  onChange={(event) => setProduct(event.target.value)}
+                  required
+                />
+              </label>
+
+              <div className="field-row">
+                <label className="field">
+                  <span className="field-label">ESTILO VISUAL</span>
+                  <select value={imageStyle} onChange={(event) => {
+                    const style = event.target.value
+                    if (style === 'fotografia' || style === 'ilustracion' || style === 'editorial') setImageStyle(style)
+                  }}>
+                    <option value="fotografia">Fotografía</option>
+                    <option value="ilustracion">Ilustración</option>
+                    <option value="editorial">Editorial</option>
+                  </select>
+                </label>
+                <label className="field">
+                  <span className="field-label">FORMATO</span>
+                  <select value={imageSize} onChange={(event) => {
+                    const size = event.target.value
+                    if (size === 'cuadrado' || size === 'horizontal' || size === 'vertical') setImageSize(size)
+                  }}>
+                    <option value="cuadrado">Cuadrado · publicación</option>
+                    <option value="vertical">Vertical · historia / reel</option>
+                    <option value="horizontal">Horizontal · portada</option>
+                  </select>
+                </label>
+              </div>
+
+              {imageError && <p className="error-message" role="alert">{imageError}</p>}
+
+              <button className="primary-button generate-button" disabled={isGeneratingImage} type="submit">
+                {isGeneratingImage ? <><span className="spinner" /> Creando imagen...</> : <>Generar imagen <span aria-hidden="true">↗</span></>}
+              </button>
+              <p className="form-footnote">La imagen no incluirá texto; podrás agregarlo en tu diseño final.</p>
+            </form>
           ) : (
             <form className="generation-form" onSubmit={handleGenerate}>
               <div className="panel-kicker"><span>{selectedMode.number}</span> CONFIGURA TU CONTENIDO</div>
@@ -492,6 +603,44 @@ function App() {
                 </button>
               </form>
               <p className="chat-footnote">Enter para enviar · Shift + Enter para nueva línea</p>
+            </>
+          ) : mode === 'imagen' ? (
+            <>
+              <div className="output-header">
+                <div>
+                  <div className="panel-kicker">IMAGEN GENERADA CON OPENAI</div>
+                  <h2>Tu imagen.</h2>
+                </div>
+                {imageResult && (
+                  <a className="copy-button" href={imageResult.image} download="impulso-anuncio.png">
+                    Descargar PNG
+                  </a>
+                )}
+              </div>
+              {imageResult ? (
+                <div className="image-preview-card">
+                  <img src={imageResult.image} alt={`Imagen publicitaria de ${product}`} />
+                  <p>{imageResult.size} · Generada con OpenAI</p>
+                </div>
+              ) : isGeneratingImage ? (
+                <div className="image-generating" role="status">
+                  <span className="spinner spinner-light" />
+                  <p>OpenAI está creando tu imagen. Esto puede tardar un momento...</p>
+                </div>
+              ) : (
+                <div className="empty-result">
+                  <div className="empty-art" aria-hidden="true">
+                    <span className="art-sun" />
+                    <span className="art-card art-card-back" />
+                    <span className="art-card art-card-front"><i /><i /><i /></span>
+                    <span className="art-spark art-spark-one">✳</span>
+                    <span className="art-spark art-spark-two">✦</span>
+                  </div>
+                  <p className="empty-kicker">TU PRÓXIMA CAMPAÑA</p>
+                  <h3>Una idea, una imagen<br />hecha para tu marca.</h3>
+                  <p>Configura el producto, estilo y formato para generar una imagen publicitaria.</p>
+                </div>
+              )}
             </>
           ) : (
             <>

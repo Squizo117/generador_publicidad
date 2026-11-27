@@ -19,11 +19,19 @@ export function errorHandler(error, request, response, next) {
     });
   }
 
+  const isOpenAiUnavailable = [
+    'APIConnectionError',
+    'APIConnectionTimeoutError',
+    'InternalServerError',
+    'RateLimitError'
+  ].includes(error.constructor?.name);
+  const isRetryableApiStatus = Number.isInteger(error.status)
+    && (error.status === 429 || error.status >= 500);
   const isAiUnavailable = (
-    error.name === 'ApiError'
-    && Number.isInteger(error.status)
-    && error.status >= 500
-  ) || error.cause?.name === 'HeadersTimeoutError';
+    (error.name === 'ApiError' && error.status >= 500)
+    || (isOpenAiUnavailable && (isRetryableApiStatus || error.status === undefined))
+    || error.cause?.name === 'HeadersTimeoutError'
+  );
 
   if (isAiUnavailable) {
     console.error('Error de API:', error);
